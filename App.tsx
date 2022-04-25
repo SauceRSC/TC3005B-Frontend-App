@@ -8,51 +8,34 @@ const Stack = createNativeStackNavigator();
 
 // everything is done through components
 
-// docs para fetch - https://reactnative.dev/docs/network
-// método para request por HTTP
-// la respuesta de un fetch as asíncrona
-const solicitud = async() => {
-
-  var respuesta = await fetch("https://raw.githubusercontent.com/gmorivastec/TC3005B_FRONTEND_APR4/master/gatitos.json");
-  var json = await respuesta.json();
-
-  console.log(json);
-  console.log(json[1]);
-}
 
 
 // props 
 // la manera de agregar atributos parametrizables al componente 
-const Gatito = (props:any) => {
-  
-  // props se reciben del exterior
-  // estados son valores internos de los que cada instancia tiene una copia
-  // se modifican internamente
-
-  // definición de un estado 
-  const[cuenta, setCuenta] = useState(0);
-  const[comio, setComio] = useState(false);
-  const[nombre, setNombre] = useState("Garfiol");
-
-
+const Tarjeta = (props:any) => {
   // los componentes regresan algún tipo de view
   return(<View>
-      <Text>ESTO ES UN GATITO Y SU NOMBRE ES: {props.nombre} CUENTA: {cuenta}</Text>
       <Button
-        title="EL GATITO"
+        title={props.name}
         onPress={() => {
-          alert("UN MIAU " + props.mensaje + " CUENTA: " + cuenta);
-          setCuenta(cuenta + 1);
-          solicitud();
+          props.navigation.navigate('Detalle', {id: props.id})
         }}
-       />
+      />
     </View>);
+}
+
+const DetalleTarjeta = (props:any) =>{
+  return(<View>
+    <Text>ID: {props.id}</Text>
+    <Text>Titulo: {props.name}</Text>
+    <Text>Descripcion: {props.texto}</Text>
+  </View>);
 }
 
 export default function App() {
   // aquí dejamos el puro controlador de navegación
   return(
-    <NavigationContainer linking={{enabled: true}}>
+    <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         <Stack.Screen 
           name="Principal"
@@ -68,62 +51,68 @@ export default function App() {
 }
 
 const Principal = ({navigation} : any) => {
-  // JSX
-  // syntaxis that looks like html
-  // used to define objects
-  /* 
-
-  
-  
-  */
 
   const[cargando, setCargando] = useState(true);
   const[datos, setDatos] = useState([]);
 
   const solicitud = async() => {
 
-    var respuesta = await fetch("https://raw.githubusercontent.com/gmorivastec/TC3005B_FRONTEND_APR4/master/gatitos.json");
+    var respuesta = await fetch("http://172.22.130.147:5000/");
     setDatos(await respuesta.json());
     setCargando(false);
   }
-
-  solicitud();
+  if(cargando){
+    solicitud();
+  }
 
   return (
     <View style={styles.container}>
-      <Text>HEY EVERYONE! </Text>
-
       {cargando && <Text>CARGANDO...</Text>}
       {datos && (
         <FlatList 
           data={datos}
           renderItem={({item} : any) =>
-            <Gatito 
-              nombre={item.nombre}
-              mensaje={item.nombre}
+            <Tarjeta 
+              name={item.name}
+              texto={item.texto}
+              id={item.id}
+              navigation={navigation}
             />
           }
         />
       )}
-
-      
-      <Button
-        title="VE AL DETALLE"
-        onPress={() => {
-          navigation.navigate("Detalle", {unDato: "pruebita1", otroDato: "pruebita2"});
-        }}
-       />
       <StatusBar style="auto" />
     </View>
   );
 }
 
 const Detalle = ({navigation, route} : any) => {
+  const[cargando, setCargando] = useState(true);
+  const[datos, setDatos] = useState([]);
+  const solicitud = async() => {
+
+    var respuesta = await fetch("http://172.22.130.147:5000/getData/"+route.params.id);
+    setDatos(await respuesta.json());
+    setCargando(false);
+  }
+  if(cargando){
+    solicitud();
+  }
 
   return (
     <View style={styles.container}>
-      <Text> INFO IMPORTANTE AQUI {route.params.unDato} </Text>
-      <Text> MAS INFO IMPORTANTE ACÁ {route.params.otroDato} </Text>
+      {cargando && <Text>CARGANDO...</Text>}
+      {!cargando && <DetalleTarjeta
+                    name={datos[0].name}
+                    id={datos[0].id}
+                    texto={datos[0].texto}
+                    />}
+      <Button
+        title={"Regreso"}
+        onPress={() => {
+          navigation.navigate('Principal');
+        }}
+      />
     </View>
   );
 }
